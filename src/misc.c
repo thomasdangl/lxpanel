@@ -856,10 +856,13 @@ void _calculate_position(LXPanel *panel, GdkRectangle *rect)
 {
     Panel *np = panel->priv;
     GdkScreen *screen;
-    GdkRectangle marea;
+    GdkRectangle marea, tmp;
+    gint screens;
 
     ENTER;
     screen = gtk_widget_get_screen(GTK_WIDGET(panel));
+    screens = gdk_screen_get_n_monitors(screen);
+
     if (np->monitor < 0) /* all monitors */
     {
         marea.x = 0;
@@ -867,8 +870,21 @@ void _calculate_position(LXPanel *panel, GdkRectangle *rect)
         marea.width = gdk_screen_get_width(screen);
         marea.height = gdk_screen_get_height(screen);
     }
-    else if (np->monitor < gdk_screen_get_n_monitors(screen))
-        gdk_screen_get_monitor_geometry(screen,np->monitor,&marea);
+    else if (np->monitor < screens)
+    {
+        marea.width = gdk_screen_get_width(screen);
+        marea.height = gdk_screen_get_height(screen);
+        
+        for (int i = 0; i < screens; i++)
+        {
+            if (i == np->monitor)
+                continue;
+
+            gdk_screen_get_monitor_geometry(screen, i, &tmp);
+            marea.width -= tmp.width;
+            marea.height -= tmp.height;
+        }
+    }
     else
     {
         marea.x = 0;
